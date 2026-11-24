@@ -20,7 +20,13 @@ table{width:100%;border-collapse:collapse}td{padding:7px;border-bottom:1px solid
 <label for="site">Сайттын дареги (GitHub шилтемеси)</label>
 <input id="site" placeholder="https://СИЗДИН-АТ.github.io/РЕПО/">
 <label style="font-weight:400;margin:8px 0"><input type="checkbox" id="short" checked style="width:auto"> Кооз кыска шилтеме (сайт/#Дүйшөн-Гүлжамал), index.html'ди өзгөртүүнүн кереги жок</label>
-<label for="names">Коноктор (ар бир сапка бир чакыруу)</label>
+<label for="msg">WhatsApp билдирүүсү ({ат} жана {шилтеме} өзү алмашат)</label>
+<textarea id="msg" style="height:120px">Урматтуу {ат}! 🤍
+Сизди 1-декабрда болуучу үй той жана уул тойубуздун кубанычына шерик болууга чакырабыз.
+Чакыруу каты тиркелди. Төмөнкү шилтемени ачып, толук маалыматты көрүп, катыша аласызбы же жокпу белгилеп коюңуз:
+{шилтеме}</textarea>
+<label for="names">Коноктор (ар бир сапка бир чакыруу; телефон бар болсо: Аты ; 996700123456)</label>
+
 <textarea id="names">Абдиаким жезде & Шахзада эже
 Дүйшөн & Гүлжамал
 Жамиля жене & Бектур</textarea>
@@ -62,8 +68,8 @@ function draw(name){
   x.font='italic 32px "Noto Serif",serif';x.textAlign='center';
   var ln=wrap(x,'Сизди үй той жана уул тойубуздун кубанычына шерик болууга чакырабыз',620);
   ln.forEach(function(t,k){T(x,t,850+k*46,'italic 32px "Noto Serif",serif','#F8EBDD')});
-  T(x,'02 · 12 · 26',1040,'600 78px "Noto Serif",serif','#E2C27F',8);
-  T(x,'2-ДЕКАБРЬ · СРЕДА',1098,'600 26px "Noto Serif",serif','#F8EBDD',8);
+  T(x,'01 · 12 · 26',1040,'600 78px "Noto Serif",serif','#E2C27F',8);
+  T(x,'1-ДЕКАБРЬ · ВТОРНИК',1098,'600 26px "Noto Serif",serif','#F8EBDD',8);
   x.strokeStyle='#E2C27F';x.lineWidth=1.5;x.beginPath();x.moveTo(380,1150);x.lineTo(510,1150);x.moveTo(570,1150);x.lineTo(700,1150);x.stroke();
   x.fillStyle='#E2C27F';x.save();x.translate(540,1150);x.rotate(Math.PI/4);x.fillRect(-7,-7,14,14);x.restore();
   T(x,'ТОЙ ЭЭЛЕРИ',1215,'600 22px "Noto Serif",serif','#E2C27F',6);
@@ -79,12 +85,24 @@ function tr(s){return s.toLowerCase().split('').map(function(c){return TR[c]!==u
 var SL={};
 function slugs(){SL={};var used={};names.forEach(function(n){if(SL[n])return;var p=n.split('&').map(function(a){return a.trim().split(/\s+/)[0]||''}).filter(Boolean).join('-');var s=tr(p).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'guest';var b=s,k=2;while(used[s])s=b+'-'+k++;used[s]=1;SL[n]=s})}
 function gmapText(){parse();return names.filter(function(n,i){return names.indexOf(n)===i}).map(function(n){return "'"+SL[n]+"':'"+n.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'"}).join(',\n')}
-function parse(){names=$('names').value.split('\n').map(function(s){return s.split(';')[0].trim()}).filter(Boolean);slugs()}
+var PH={};
+function parse(){PH={};names=$('names').value.split('\n').map(function(s){var p=s.split(';');var n=p[0].trim();if(n&&p[1])PH[n]=p[1].replace(/\D/g,'');return n}).filter(Boolean);slugs()}
 function fname(n,i){return String(i+1).padStart(3,'0')+'_'+n.replace(/[\\\/:*?"<>|&]/g,'').replace(/\s+/g,' ').trim()+'.png'}
 function b64(n){var u=new TextEncoder().encode(n),r='';u.forEach(function(c){r+=String.fromCharCode(c)});return btoa(r).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function lnk(n){var b=$('site').value.trim().replace(/[?#].*$/,'');if(b&&b.slice(-1)!=='/'&&!/\.html?$/i.test(b))b+='/';if($('short').checked)return b+'#'+n.replace(/\s*&\s*/g,'-').replace(/\s+/g,'_');return b+'?m='+encodeURIComponent(n)}
 function copy(t){if(navigator.clipboard&&window.isSecureContext){return navigator.clipboard.writeText(t).catch(function(){prompt('Көчүрүңүз:',t)})}prompt('Көчүрүңүз:',t);return Promise.resolve()}
 function csvText(){parse();return '\ufeff'+'Аты-жөнү;Шилтеме\r\n'+names.map(function(n){return '"'+n.replace(/"/g,'""')+'";'+lnk(n)}).join('\r\n')}
+function msgText(n){return $('msg').value.replace(/\{ат\}/g,n).replace(/\{шилтеме\}/g,lnk(n))}
+async function wa(n,i,btn){
+  var old=btn.textContent;btn.textContent='Даярдалууда...';
+  var bl=await blob(draw(n)),text=msgText(n),file=new File([bl],fname(n,i),{type:'image/png'});
+  btn.textContent=old;
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],text:text});return}catch(e){if(e&&e.name==='AbortError')return}
+  }
+  save(bl,fname(n,i));
+  window.open('https://wa.me/'+(PH[n]||'')+'?text='+encodeURIComponent(text),'_blank');
+}
 function blob(c){return new Promise(function(r){c.toBlob(r,'image/png')})}
 function save(b,n){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click()}
 function show(n){var c=draw(n),p=$('pv'),q=p.getContext('2d');q.clearRect(0,0,W,H);q.drawImage(c,0,0)}
@@ -96,7 +114,8 @@ function list(){
     var v=document.createElement('button');v.className='g';v.textContent='Көрүү';v.onclick=function(){show(n)};
     var d=document.createElement('button');d.textContent='PNG жүктөө';d.onclick=function(){blob(draw(n)).then(function(bl){save(bl,fname(n,i))})};
     var l=document.createElement('button');l.className='g';l.textContent='Шилтеме көчүрүү';l.onclick=function(){copy(lnk(n)).then(function(){l.textContent='Көчүрүлдү ✓';setTimeout(function(){l.textContent='Шилтеме көчүрүү'},1500)})};
-    b.appendChild(v);b.appendChild(d);b.appendChild(l);tr.appendChild(a);tr.appendChild(b);t.appendChild(tr);
+    var w=document.createElement('button');w.style.background='#1f9d55';w.textContent='WhatsApp';w.onclick=function(){wa(n,i,w)};
+    b.appendChild(w);b.appendChild(v);b.appendChild(d);b.appendChild(l);tr.appendChild(a);tr.appendChild(b);t.appendChild(tr);
   });
   $('st').textContent='Жалпы: '+names.length+' чакыруу';
   show(names[0]||'меймандар');
