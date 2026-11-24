@@ -20,7 +20,7 @@ table{width:100%;border-collapse:collapse}td{padding:7px;border-bottom:1px solid
 <label for="site">Сайттын дареги (GitHub шилтемеси)</label>
 <input id="site" placeholder="https://СИЗДИН-АТ.github.io/РЕПО/">
 <label style="font-weight:400;margin:8px 0"><input type="checkbox" id="short" checked style="width:auto"> Кооз кыска шилтеме (сайт/#Дүйшөн-Гүлжамал), index.html'ди өзгөртүүнүн кереги жок</label>
-<label style="font-weight:400;margin:8px 0"><input type="checkbox" id="pre" checked style="width:auto"> Шилтеме сүрөт болуп көрүнсүн (превью). Түз чат ачылганда сүрөт шилтеме аркылуу кошо кетет</label>
+<label style="font-weight:400;margin:8px 0"><input type="checkbox" id="pre" style="width:auto"> Шилтеме сүрөт болуп көрүнсүн (превью). Түз чат ачылганда сүрөт шилтеме аркылуу кошо кетет</label>
 <label for="msg">WhatsApp билдирүүсү ({ат} жана {шилтеме} өзү алмашат)</label>
 <textarea id="msg" style="height:120px">Урматтуу {ат}! 🤍
 Сизди 1-декабрда болуучу үй той жана уул тойубуздун кубанычына шерик болууга чакырабыз.
@@ -36,6 +36,7 @@ table{width:100%;border-collapse:collapse}td{padding:7px;border-bottom:1px solid
 <button class="g" id="zip">Баарын ZIP кылып жүктөө</button>
 <button class="g" id="csv">Шилтемелерди CSV (Excel) кылып жүктөө</button>
 <button id="pz" style="background:#1f9d55">1) Превью-пакет ZIP (GitHub үчүн)</button>
+<button class="g" id="vcf">Контакттарды VCF кылып жүктөө</button>
 <button class="g" id="cpall">Бардык шилтемелерди көчүрүү</button></p>
 <div id="st" class="hint"></div>
 <canvas id="pv" width="1080" height="1620"></canvas>
@@ -160,6 +161,16 @@ $('pz').onclick=async function(){
   }
   save(await z.generateAsync({type:'blob'}),'preview-paket.zip');
   $('st').textContent='Даяр ✓ ZIP ичиндеги "i" папкасын GitHub репозиторийдин түбүнө жүктөңүз';
+};
+$('vcf').onclick=function(){
+  parse();var out=[],seen={};
+  names.forEach(function(n){
+    if(seen[n]||!PH[n])return;seen[n]=1;
+    out.push('BEGIN:VCARD\r\nVERSION:3.0\r\nFN:'+n+'\r\nN:'+n+';;;;\r\nTEL;TYPE=CELL:+'+PH[n]+'\r\nEND:VCARD');
+  });
+  if(!out.length){$('st').textContent='Номери бар конок жок. Тизмеге "Аты ; 996700123456" деп жазыңыз';return}
+  save(new Blob([out.join('\r\n')+'\r\n'],{type:'text/vcard;charset=utf-8'}),'koktor.vcf');
+  $('st').textContent='VCF даяр ✓ ('+out.length+' контакт)';
 };
 $('cpall').onclick=function(){parse();copy(names.map(function(n){return n+'\t'+lnk(n)}).join('\n')).then(function(){$('st').textContent='Баары көчүрүлдү ✓'})};
 $('gen').onclick=function(){blob(draw('меймандар')).then(function(b){save(b,'chakyruu_jalpy.png')})};
