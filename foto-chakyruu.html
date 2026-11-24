@@ -20,6 +20,7 @@ table{width:100%;border-collapse:collapse}td{padding:7px;border-bottom:1px solid
 <label for="site">Сайттын дареги (GitHub шилтемеси)</label>
 <input id="site" placeholder="https://СИЗДИН-АТ.github.io/РЕПО/">
 <label style="font-weight:400;margin:8px 0"><input type="checkbox" id="short" checked style="width:auto"> Кооз кыска шилтеме (сайт/#Дүйшөн-Гүлжамал), index.html'ди өзгөртүүнүн кереги жок</label>
+<label style="font-weight:400;margin:8px 0"><input type="checkbox" id="pre" checked style="width:auto"> Шилтеме сүрөт болуп көрүнсүн (превью). Түз чат ачылганда сүрөт шилтеме аркылуу кошо кетет</label>
 <label for="msg">WhatsApp билдирүүсү ({ат} жана {шилтеме} өзү алмашат)</label>
 <textarea id="msg" style="height:120px">Урматтуу {ат}! 🤍
 Сизди 1-декабрда болуучу үй той жана уул тойубуздун кубанычына шерик болууга чакырабыз.
@@ -34,6 +35,7 @@ table{width:100%;border-collapse:collapse}td{padding:7px;border-bottom:1px solid
 <button class="g" id="gen">Аты жок (жалпы) сүрөт жүктөө</button>
 <button class="g" id="zip">Баарын ZIP кылып жүктөө</button>
 <button class="g" id="csv">Шилтемелерди CSV (Excel) кылып жүктөө</button>
+<button id="pz" style="background:#1f9d55">1) Превью-пакет ZIP (GitHub үчүн)</button>
 <button class="g" id="cpall">Бардык шилтемелерди көчүрүү</button></p>
 <div id="st" class="hint"></div>
 <canvas id="pv" width="1080" height="1620"></canvas>
@@ -89,7 +91,8 @@ var PH={};
 function parse(){PH={};names=$('names').value.split('\n').map(function(s){var p=s.split(';');var n=p[0].trim();if(n&&p[1])PH[n]=p[1].replace(/\D/g,'');return n}).filter(Boolean);slugs()}
 function fname(n,i){return String(i+1).padStart(3,'0')+'_'+n.replace(/[\\\/:*?"<>|&]/g,'').replace(/\s+/g,' ').trim()+'.png'}
 function b64(n){var u=new TextEncoder().encode(n),r='';u.forEach(function(c){r+=String.fromCharCode(c)});return btoa(r).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
-function lnk(n){var b=$('site').value.trim().replace(/[?#].*$/,'');if(b&&b.slice(-1)!=='/'&&!/\.html?$/i.test(b))b+='/';if($('short').checked)return b+'#'+n.replace(/\s*&\s*/g,'-').replace(/\s+/g,'_');return b+'?m='+encodeURIComponent(n)}
+function root(){var b=$('site').value.trim().replace(/[?#].*$/,'').replace(/index\.html?$/i,'');if(b&&b.slice(-1)!=='/')b+='/';return b}
+function lnk(n){if($('pre').checked&&SL[n]&&root())return root()+'i/'+SL[n]+'/';var b=$('site').value.trim().replace(/[?#].*$/,'');if(b&&b.slice(-1)!=='/'&&!/\.html?$/i.test(b))b+='/';if($('short').checked)return b+'#'+n.replace(/\s*&\s*/g,'-').replace(/\s+/g,'_');return b+'?m='+encodeURIComponent(n)}
 function copy(t){if(navigator.clipboard&&window.isSecureContext){return navigator.clipboard.writeText(t).catch(function(){prompt('Көчүрүңүз:',t)})}prompt('Көчүрүңүз:',t);return Promise.resolve()}
 function csvText(){parse();return '\ufeff'+'Аты-жөнү;Шилтеме\r\n'+names.map(function(n){return '"'+n.replace(/"/g,'""')+'";'+lnk(n)}).join('\r\n')}
 function msgText(n){return $('msg').value.replace(/\{ат\}/g,n).replace(/\{шилтеме\}/g,lnk(n))}
@@ -103,6 +106,11 @@ async function wa(n,i,btn){
   save(bl,fname(n,i));
   window.open('https://wa.me/'+(PH[n]||'')+'?text='+encodeURIComponent(text),'_blank');
 }
+function wd(n,i){
+  var u='https://wa.me/'+(PH[n]||'')+'?text='+encodeURIComponent(msgText(n));
+  window.open(u,'_blank');
+  if(!$('pre').checked)blob(draw(n)).then(function(bl){save(bl,fname(n,i))});
+}
 function blob(c){return new Promise(function(r){c.toBlob(r,'image/png')})}
 function save(b,n){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click()}
 function show(n){var c=draw(n),p=$('pv'),q=p.getContext('2d');q.clearRect(0,0,W,H);q.drawImage(c,0,0)}
@@ -115,7 +123,8 @@ function list(){
     var d=document.createElement('button');d.textContent='PNG жүктөө';d.onclick=function(){blob(draw(n)).then(function(bl){save(bl,fname(n,i))})};
     var l=document.createElement('button');l.className='g';l.textContent='Шилтеме көчүрүү';l.onclick=function(){copy(lnk(n)).then(function(){l.textContent='Көчүрүлдү ✓';setTimeout(function(){l.textContent='Шилтеме көчүрүү'},1500)})};
     var w=document.createElement('button');w.style.background='#1f9d55';w.textContent='WhatsApp';w.onclick=function(){wa(n,i,w)};
-    b.appendChild(w);b.appendChild(v);b.appendChild(d);b.appendChild(l);tr.appendChild(a);tr.appendChild(b);t.appendChild(tr);
+    var w2=document.createElement('button');w2.style.background='#128C7E';w2.textContent='Түз чат';w2.onclick=function(){wd(n,i)};
+    b.appendChild(w);b.appendChild(w2);b.appendChild(v);b.appendChild(d);b.appendChild(l);tr.appendChild(a);tr.appendChild(b);t.appendChild(tr);
   });
   $('st').textContent='Жалпы: '+names.length+' чакыруу';
   show(names[0]||'меймандар');
@@ -123,6 +132,35 @@ function list(){
 $('go').onclick=list;
 
 $('csv').onclick=function(){save(new Blob([csvText()],{type:'text/csv;charset=utf-8'}),'shilteme.csv')};
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+function prePage(n,base,sl){
+  var tgt=$('short').checked?'../../#'+n.replace(/\s*&\s*/g,'-').replace(/\s+/g,'_'):'../../?m='+encodeURIComponent(n);
+  return '<!doctype html><html lang="ky"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
+  '<title>Чакыруу: '+esc(n)+'</title>'+
+  '<meta property="og:type" content="website"><meta property="og:title" content="Урматтуу '+esc(n)+'!">'+
+  '<meta property="og:description" content="Үй той жана уул той · 1-декабрь. Ачып, толук маалыматты көрүңүз.">'+
+  '<meta property="og:image" content="'+base+'i/'+sl+'/p.jpg"><meta property="og:image:width" content="600"><meta property="og:image:height" content="900">'+
+  '<meta name="twitter:card" content="summary_large_image">'+
+  '<script>location.replace('+JSON.stringify(tgt)+')</'+'script></head><body><p><a href="'+esc(tgt)+'">Чакырууну ачуу</a></p></body></html>';
+}
+$('pz').onclick=async function(){
+  parse();var base=root();
+  if(!base){alert('Алгач сайттын дарегин (GitHub шилтемеси) жазыңыз');return}
+  if(!names.length)return;
+  var z=new JSZip(),done={};
+  for(var i=0;i<names.length;i++){
+    var n=names[i];if(done[n])continue;done[n]=1;
+    $('st').textContent='Даярдалууда: '+(i+1)+' / '+names.length;
+    var c=draw(n),sm=document.createElement('canvas');sm.width=600;sm.height=900;
+    sm.getContext('2d').drawImage(c,0,0,600,900);
+    var jb=await new Promise(function(r){sm.toBlob(r,'image/jpeg',.85)});
+    z.file('i/'+SL[n]+'/p.jpg',jb);
+    z.file('i/'+SL[n]+'/index.html',prePage(n,base,SL[n]));
+    await new Promise(function(r){setTimeout(r,0)});
+  }
+  save(await z.generateAsync({type:'blob'}),'preview-paket.zip');
+  $('st').textContent='Даяр ✓ ZIP ичиндеги "i" папкасын GitHub репозиторийдин түбүнө жүктөңүз';
+};
 $('cpall').onclick=function(){parse();copy(names.map(function(n){return n+'\t'+lnk(n)}).join('\n')).then(function(){$('st').textContent='Баары көчүрүлдү ✓'})};
 $('gen').onclick=function(){blob(draw('меймандар')).then(function(b){save(b,'chakyruu_jalpy.png')})};
 $('zip').onclick=async function(){
