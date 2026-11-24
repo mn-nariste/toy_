@@ -97,6 +97,7 @@ function copy(t){if(navigator.clipboard&&window.isSecureContext){return navigato
 function csvText(){parse();return '\ufeff'+'Аты-жөнү;Шилтеме\r\n'+names.map(function(n){return '"'+n.replace(/"/g,'""')+'";'+lnk(n)}).join('\r\n')}
 function msgText(n){return $('msg').value.replace(/\{ат\}/g,n).replace(/\{шилтеме\}/g,lnk(n))}
 async function wa(n,i,btn){
+  if($('pre').checked&&root()){window.open('https://wa.me/'+(PH[n]||'')+'?text='+encodeURIComponent(msgText(n)),'_blank');return}
   var old=btn.textContent;btn.textContent='Даярдалууда...';
   var bl=await blob(draw(n)),text=msgText(n),file=new File([bl],fname(n,i),{type:'image/png'});
   btn.textContent=old;
@@ -123,8 +124,7 @@ function list(){
     var d=document.createElement('button');d.textContent='PNG жүктөө';d.onclick=function(){blob(draw(n)).then(function(bl){save(bl,fname(n,i))})};
     var l=document.createElement('button');l.className='g';l.textContent='Шилтеме көчүрүү';l.onclick=function(){copy(lnk(n)).then(function(){l.textContent='Көчүрүлдү ✓';setTimeout(function(){l.textContent='Шилтеме көчүрүү'},1500)})};
     var w=document.createElement('button');w.style.background='#1f9d55';w.textContent='WhatsApp';w.onclick=function(){wa(n,i,w)};
-    var w2=document.createElement('button');w2.style.background='#128C7E';w2.textContent='Түз чат';w2.onclick=function(){wd(n,i)};
-    b.appendChild(w);b.appendChild(w2);b.appendChild(v);b.appendChild(d);b.appendChild(l);tr.appendChild(a);tr.appendChild(b);t.appendChild(tr);
+    b.appendChild(w);b.appendChild(v);b.appendChild(d);b.appendChild(l);tr.appendChild(a);tr.appendChild(b);t.appendChild(tr);
   });
   $('st').textContent='Жалпы: '+names.length+' чакыруу';
   show(names[0]||'меймандар');
